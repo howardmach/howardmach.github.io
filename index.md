@@ -18,7 +18,7 @@ I am an aspiring Data Analyst/Scientist passionate about transforming real-world
 
 Check out full project reports and presentations on my [Portfolio Website](https://howardmach.github.io):
 
-### 🏈 [NFL Offensive Performance & Betting Odds Analysis](./projects/nfl-performance-analysis)
+### 🏈 NFL Offensive Performance & Betting Odds Analysis
 * **Tools:** R (`ggplot2`, `dplyr`), Exploratory Data Analysis, Data Wrangling[cite: 1]
 * **Summary:** Analyzed $19,000+$ player performances across $1,600+$ NFL games to evaluate post-blowout adjustments, fantasy scoring distributions, home-field bias, and betting market predictability[cite: 1].
 * **Links:** [📄 View Full Case Study & PDF Report](./projects/nfl-performance-analysis)
