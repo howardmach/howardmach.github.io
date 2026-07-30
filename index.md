@@ -1,3 +1,2 @@
-# Howard Mach | Data Analyst & Statistics Portfolio
+# Howard Mach
 
-Welcome! Here are a few featured data analysis and statistical modeling projects.
