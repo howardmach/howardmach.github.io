@@ -66,7 +66,19 @@ $$Y_{\text{flipper}} = 74.9158 - 2.8069(\Delta^{13}\text{C}) - 1.2943(\text{Culm
 
 ---
 
-## 📄 Full Project Report & Appendix
+## 📊 Project Presentation (Slide Deck)
+
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vQWEmryTad5-0UDWp775WFw6V-gGfCOZOKsE_2l0oBbgraFSqFGcfpWmM2wRnfjl5mN96FqZ_o5ZSd_/pubembed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+
+<p align="center">
+  <a href="https://docs.google.com/presentation/d/1FsCpRD29jfYGywoQSfH8R0-HBLNBanClmOhYr4RRljw/edit?usp=sharing" target="_blank" style="padding: 8px 16px; background-color: #0366d6; color: white; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    🔗 Open Presentation in Fullscreen
+  </a>
+</p>
+
+---
+
+## 📄 Full Project Report
 
 <iframe src="../assets/pdfs/penguins_regression.pdf" width="100%" height="700px" style="border: none;">
     This browser does not support inline PDFs. Please download the file below.
