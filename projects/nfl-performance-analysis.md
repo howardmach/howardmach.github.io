@@ -15,12 +15,12 @@ An empirical analysis of 19,000+ player performances across 1,600+ NFL games usi
 
 ## 📄 Full Report (Interactive PDF)
 
-<iframe src="../assets/pdfs/nfl_performance_report.pdf" width="100%" height="700px" style="border: none;">
+<iframe src="../assets/pdfs/nfl_performance_analysis.pdf" width="100%" height="700px" style="border: none;">
     This browser does not support inline PDFs. Please download the file below.
 </iframe>
 
 <p align="center">
-  <a href="../assets/pdfs/nfl_performance_report.pdf" target="_blank" style="padding: 10px 20px; background-color: #0366d6; color: white; border-radius: 6px; text-decoration: none; font-weight: bold;">
+  <a href="../assets/pdfs/nfl_performance_analysis.pdf" target="_blank" style="padding: 10px 20px; background-color: #0366d6; color: white; border-radius: 6px; text-decoration: none; font-weight: bold;">
     📥 Download Full PDF Report
   </a>
 </p>
