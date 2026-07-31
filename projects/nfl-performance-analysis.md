@@ -18,6 +18,26 @@ An empirical analysis of 19,000+ player performances across 1,600+ NFL games usi
 
 ---
 
+## 📊 Project Presentation (Slide Deck)
+
+<iframe 
+    src="https://docs.google.com/presentation/d/e/2PACX-1vT_hOr6YI2K6Nq2lrlJzS4c378eRIA_6HcehTcm7L_EsofUxgd0q4xE168SB5NuxQRm0zdubagox3mR/pubembedstart=false&loop=false&delayms=3000" 
+    frameborder="0" 
+    width="960" 
+    height="569" 
+    allowfullscreen="true" 
+    mozallowfullscreen="true" 
+    webkitallowfullscreen="true">
+</iframe>
+
+<p align="center">
+  <a href="https://docs.google.com/presentation/d/YOUR_PRESENTATION_ID/edit?usp=sharing" target="_blank" style="padding: 8px 16px; background-color: #0366d6; color: white; border-radius: 6px; text-decoration: none; font-weight: bold;">
+    🔗 Open Presentation in Fullscreen
+  </a>
+</p>
+
+---
+
 ## 📄 Full Report (Interactive PDF)
 
 <iframe src="../assets/pdfs/nfl_performance_analysis.pdf" width="100%" height="700px" style="border: none;">
