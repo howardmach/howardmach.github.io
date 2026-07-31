@@ -1,3 +1,8 @@
+---
+layout: default
+title: NFL Performance Analysis
+---
+
 # 🏈 NFL Offensive Performance & Betting Odds Analysis
 
 An empirical analysis of 19,000+ player performances across 1,600+ NFL games using R to evaluate team resilience, position value, and betting market predictability.
