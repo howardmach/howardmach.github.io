@@ -16,9 +16,9 @@ I am an aspiring Data Analyst/Scientist passionate about transforming real-world
 
 ## 📌 Featured Projects
 
-Check out full project reports and presentations on my [Portfolio Website](https://howardmach.github.io):
+Check out full project reports and presentations below:
 
-### 🐧 Penguin Flipper Length Regression Model
+### 🐧 Penguin Flipper Length Regression Prediction & Analysis
 * **Tools:** R, OLS Regression, Model Diagnostics
 * **Summary:** Built a linear regression model with full diagnostic checking (residual normality, homoscedasticity, VIF) to predict penguin flipper length based on other characteristics.
 * **Links:** [📄 View Project](./projects/penguin-regression)
