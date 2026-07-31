@@ -1,3 +1,8 @@
+---
+layout: default
+title: Penguin Regression Analysis
+---
+
 # 🐧 Analysis of Palmer Archipelago Penguins: Prediction Model on Flipper Length
 
 **Authors:** Howard Mach, Andy Chandler, Thompson Pham  
