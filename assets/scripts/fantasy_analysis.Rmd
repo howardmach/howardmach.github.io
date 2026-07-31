@@ -1,0 +1,334 @@
+---
+title: "NFL"
+author: "Howard Mach"
+date: "2022-09-27"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/users/howar/OneDrive/Documents')
+```
+
+# Are QBs, RBs, TEs or WRs more valuable in fantasy football?
+
+```{r}
+# Extracting data from file
+
+nfl <- read.csv("nfl_pass_rush_receive_raw_data.csv", 
+                na.strings = "NA")
+
+# Creating variable for fantasy averages
+
+nfl$fantasy_average <- 
+  (nfl$Total_DKP + nfl$Total_FDP + nfl$Total_SDP) / 3
+
+# Separating data into positions (reference)
+
+index_qbs <- which(nfl$pos == "QB")
+quarterbacks <- nfl[index_qbs, ]
+
+index_rbs <- which(nfl$pos == "RB")
+running_backs <- nfl[index_rbs, ]
+
+index_wrs <- which(nfl$pos == "WR")
+wide_receivers <- nfl[index_wrs, ]
+
+index_tes <- which(nfl$pos == "TE")
+tight_ends <- nfl[index_tes, ]
+```
+
+```{r}
+# Cleaning data for each position
+
+quarterbacks <- subset(quarterbacks, 
+                       select = c(3, 4, 5, 6, 7, 8, 9, 10, 
+                                  11, 12, 13, 14, 15, 16, 17, 18,
+                                  19, 20, 21, 22, 23, 24, 
+                                  45, 46, 47, 48, 49, 50, 
+                                  51, 52, 53, 70))
+
+names(quarterbacks) <- c("Position", "Player", "Team",
+                         "Pass_Completions", "Pass_Attempts", 
+                         "Pass_YDs", "Pass_TDs", "INTs",
+                         "Sacks", "Sack_YDs", "Longest_Pass",
+                         "Passer_Rating", "Rush_Attempts",
+                         "Rush_YDs", "Rush_TDs", "Longest_Rush",
+                         "Targets", "Catches",
+                         "Receiving_YDs", "Receiving_TDs",
+                         "Longest_Reception",
+                         "Fumbles_Lost", "Poor_Throws", 
+                         "Passes_Blitzed", 
+                         "Passes_Hurried", 
+                         "Rush_YDs_Before_Contact", 
+                         "Rush_YDs_After_Contact",
+                         "Broken_Tackles", "Air_YDs", 
+                         "Yards_After_Catch", "Drops",
+                         "Fantasy_Average")
+
+running_backs <- subset(running_backs, 
+                        select = c(3, 4, 5, 15, 16, 17, 18, 19, 
+                                   20, 21, 22, 23, 24, 48, 
+                                   49, 50, 51, 52, 53, 70))
+
+names(running_backs) <- c("Position", "Player", "Team",
+                         "Rush_Attempts", "Rush_YDs", "Rush_TDs",
+                         "Longest_Rush", "Targets", "Catches",
+                         "Receiving_YDs", "Receiving_TDs",
+                         "Longest_Reception", "Fumbles_Lost",
+                         "Rush_YDs_Before_Contact", 
+                         "Rush_YDs_After_Contact",
+                         "Broken_Tackles", "Air_YDs", 
+                         "Yards_After_Catch", "Drops",
+                         "Fantasy_Average")
+
+tight_ends <- subset(tight_ends, 
+                        select = c(3, 4, 5, 15, 16, 17, 18, 19, 
+                                   20, 21, 22, 23, 24, 48, 
+                                   49, 50, 51, 52, 53, 70))
+
+names(tight_ends) <- c("Position", "Player", "Team",
+                         "Rush_Attempts", "Rush_YDs", "Rush_TDs",
+                         "Longest_Rush", "Targets", "Catches",
+                         "Receiving_YDs", "Receiving_TDs",
+                         "Longest_Reception", "Fumbles_Lost",
+                         "Rush_YDs_Before_Contact", 
+                         "Rush_YDs_After_Contact",
+                         "Broken_Tackles", "Air_YDs", 
+                         "Yards_After_Catch", "Drops",
+                         "Fantasy_Average")
+
+wide_receivers <- subset(wide_receivers, 
+                        select = c(3, 4, 5, 15, 16, 17, 18, 19, 
+                                   20, 21, 22, 23, 24, 48, 
+                                   49, 50, 51, 52, 53, 70))
+
+names(wide_receivers) <- c("Position", "Player", "Team",
+                         "Rush_Attempts", "Rush_YDs", "Rush_TDs",
+                         "Longest_Rush", "Targets", "Catches",
+                         "Receiving_YDs", "Receiving_TDs",
+                         "Longest_Reception", "Fumbles_Lost",
+                         "Rush_YDs_Before_Contact", 
+                         "Rush_YDs_After_Contact",
+                         "Broken_Tackles", "Air_YDs", 
+                         "Yards_After_Catch", "Drops",
+                         "Fantasy_Average")
+```
+
+```{r}
+# Removing non-impactful players
+
+quarterbacks <- subset(quarterbacks, 
+                       quarterbacks$Pass_Attempts +
+                         quarterbacks$Rush_Attempts > 0)
+
+running_backs <- subset(running_backs,
+                        running_backs$Rush_Attempts +
+                          running_backs$Targets > 0)
+
+tight_ends <- subset(tight_ends, 
+                     tight_ends$Rush_Attempts + 
+                       tight_ends$Targets > 0)
+
+wide_receivers <- subset(wide_receivers, 
+                         wide_receivers$Rush_Attempts +
+                           wide_receivers$Targets > 0)
+```
+
+```{r}
+# Cleaning data for entire offense
+
+nfl <- subset(nfl, select = c(3, 4, 5, 6, 7, 8, 9, 10, 
+                                  11, 12, 13, 14, 15, 16, 
+                                  17, 18, 19, 20, 21, 22, 23, 24,
+                                  45, 46, 47, 48, 49, 
+                                  50, 51, 52, 53, 70))
+
+names(nfl) <- c("Position", "Player", "Team",
+                         "Pass_Completions", "Pass_Attempts", 
+                         "Pass_YDs", "Pass_TDs", "INTs",
+                         "Sacks", "Sack_YDs", "Longest_Pass",
+                         "Passer_Rating", "Rush_Attempts",
+                         "Rush_YDs", "Rush_TDs", "Longest_Rush",
+                         "Targets", "Catches",
+                         "Receiving_YDs", "Receiving_TDs",
+                         "Longest_Reception",
+                         "Fumbles_Lost", "Poor_Throws", 
+                         "Passes_Blitzed", "Passes_Hurried", 
+                         "Rush_YDs_Before_Contact", 
+                         "Rush_YDs_After_Contact",
+                         "Broken_Tackles", "Air_YDs", 
+                         "Yards_After_Catch", "Drops",
+                         "Fantasy_Average")
+
+nfl <- subset(nfl,
+         (nfl$Pass_Attempts + nfl$Rush_Attempts +
+            nfl$Targets) > 0)
+```
+
+```{r}
+# Loading tidyverse
+
+library(tidyverse)
+```
+
+```{r}
+# Creating boxplot through ggplot2
+
+ggplot(data = subset(nfl, Position == c("QB", "RB", "TE", "WR"))) + geom_violin(mapping = aes(x = Position, y = Fantasy_Average, color = Position)) + 
+  geom_boxplot(mapping = aes(x = Position, y = Fantasy_Average, color = Position), width = 0.1) +
+  scale_color_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1") +
+  labs(title = "Fantasy Points Averages For Main Offensive Positions", x = "", y = "Fantasy Points") + 
+  coord_cartesian(ylim = c(0, 60)) + 
+  theme(panel.grid = element_line(color = "white", linetype = 1),
+        panel.background = element_rect(fill = "gray"))
+```
+
+# Do players experience burnout and decrease in performance over the course of the season?
+
+```{r}
+# Extracting data from file
+
+nfl <- read.csv("nfl_pass_rush_receive_raw_data.csv",
+                na.strings = "NA")
+
+# Creating new variable for fantasy average
+
+nfl$fantasy_average <- 
+  (nfl$Total_DKP + nfl$Total_FDP + nfl$Total_SDP) / 3
+
+# Subsetting data
+
+nfl <- subset(nfl, select = c(69, 3, 4, 5, 6, 7, 8, 9, 10,
+                                     11, 12, 13, 14, 15, 16, 
+                                  17, 18, 19, 20, 21, 22, 23, 24,
+                                  45, 46, 47, 48, 49, 
+                                  50, 51, 52, 53, 70))
+
+names(nfl) <- c("Game_Date", "Position", "Player", 
+                            "Team", "Pass_Completions", 
+                            "Pass_Attempts", 
+                         "Pass_YDs", "Pass_TDs", "INTs",
+                         "Sacks", "Sack_YDs", "Longest_Pass",
+                         "Passer_Rating", "Rush_Attempts",
+                         "Rush_YDs", "Rush_TDs", "Longest_Rush",
+                         "Targets", "Catches",
+                         "Receiving_YDs", "Receiving_TDs",
+                         "Longest_Reception",
+                         "Fumbles_Lost", 
+                         "Poor_Throws", "Passes_Blitzed", 
+                         "Passes_Hurried", 
+                         "Rush_YDs_Before_Contact", 
+                         "Rush_YDs_After_Contact",
+                         "Broken_Tackles", "Air_YDs", 
+                         "Yards_After_Catch", "Drops",
+                        "Fantasy_Average")
+
+# Loading tidyverse and lubridate
+
+library(tidyverse)
+library(lubridate)
+
+# Putting dates in order
+
+nfl %>%
+  arrange(mdy(nfl$Game_Date))
+
+# Removing non-impactful players
+
+nfl <- subset(nfl,
+         (nfl$Pass_Attempts + 
+            nfl$Rush_Attempts +
+            nfl$Targets) > 0)
+```
+
+```{r}
+# Creating variable for game month and year
+
+nfl$Game_Month <-
+  month(mdy(nfl$Game_Date))
+
+nfl$Game_Year <- 
+  year(mdy(nfl$Game_Date))
+
+# Splitting data into months and years
+
+nfl_september <- filter(nfl, nfl$Game_Month == 9)
+
+nfl_october <- filter(nfl, nfl$Game_Month == 10)
+
+nfl_november <- filter(nfl, nfl$Game_Month == 11)
+
+nfl_december <- filter(nfl, nfl$Game_Month == 12)
+
+# Making new data frame for average yards contributed
+
+nfl_avg_pts <- 
+  data.frame(month = c("September", "October", "November", 
+                       "December"),
+             fantasy_pts <- 
+               c(mean(nfl_september$Fantasy_Average),
+                 mean(nfl_october$Fantasy_Average),
+                 mean(nfl_november$Fantasy_Average),
+                 mean(nfl_december$Fantasy_Average)))
+
+names(nfl_avg_pts) <- c("Month", "Points")
+
+# Changing month to factor variable
+
+nfl_avg_pts$Month <-
+  factor(nfl_avg_pts$Month, levels = month.name)
+```
+
+```{r}
+# Creating barplot
+
+ggplot(data = nfl_avg_pts) + theme_bw() +
+  geom_col(mapping = aes(x = Month, y = Points, fill = Month, color = Month)) + scale_fill_brewer(palette = "Set1") +
+  scale_color_brewer(palette = "Set1") + 
+  coord_cartesian(ylim = c(0, 20)) + labs(title = "Average Fantasy Points Earned During Different Months Of NFL Season")
+```
+
+# How does the team perform during the playoffs compared to the regular season?
+
+```{r}
+# Extracting data from file
+
+nfl <- read.csv("nfl_pass_rush_receive_raw_data.csv",
+                na.strings = "NA")
+
+# Subsetting data
+
+nfl <- subset(nfl, select = c(69, 3, 4, 5, 56, 57, 58, 59))
+
+names(nfl) <- c("Game_Date", "Position", "Player", "Team",
+                "Visiting_Team", "Home_Team", "Visiting_Score",
+                "Home_Score")
+
+# Loading tidyverse and lubridate
+
+library(tidyverse)
+library(lubridate)
+
+# Putting dates in order
+
+nfl %>%
+  arrange(mdy(nfl$Game_Date))
+```
+
+```{r}
+# Creating variable for game month and year
+
+nfl$Game_Month <-
+  month(mdy(nfl$Game_Date))
+
+nfl$Game_Year <- 
+  year(mdy(nfl$Game_Date))
+
+# Creating datasets for each playoff team from last 3 seasons
+
+# 2019 season
+
+
+```

@@ -1,0 +1,137 @@
+---
+title: "NFL Data"
+author: "Hayden Rogers"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Users/hroge/OneDrive/Documents/datasets')
+```
+
+# Traversing and Cleaning the Data
+
+```{r}
+# Loading the ggplot2 and dplyr libraries
+library(ggplot2)
+library(dplyr)
+
+# Reading the File
+NFL <- read.csv("nfl_pass_rush_receive_raw_data.csv")
+
+# Setting OT to a logical value
+NFL$OT <- as.logical(NFL$OT)
+
+
+# 3 Seasons
+#     1 -  6330 -- Season 1 (unique games   1 - 266)
+#  6331 - 12960 -- Season 2 (unique games 267 - 535)
+# 12961 - 19973 -- Season 3 (unique games 536 - 820)
+
+NFL_2019s <- NFL[c(1:6330), ]
+NFL_2020s <- NFL[c(6331:12960), ]
+NFL_2021s <- NFL[c(12961:19973), ]
+
+# For getting individual's data
+# Arodgers <- NFL[which(NFL$player_id == "RodgAa00"), ]
+
+# Obtaining the unique game ids
+game_ids <- unique(NFL$game_id)
+
+# Getting the unique game ids for each season's games
+game_ids_2019 <- unique(NFL_2019s$game_id)
+game_ids_2020 <- unique(NFL_2020s$game_id)
+game_ids_2021 <- unique(NFL_2021s$game_id)
+
+# Filtering the NFL game data to each unique game's data
+uniq_games <- NFL %>% 
+  distinct(game_id, .keep_all = TRUE) %>%
+  select(game_id, home_score, vis_score, home_team, vis_team, OT, Vegas_Favorite)
+
+# Filtering for games that went to Overtime
+OT_games <- filter(uniq_games, OT == TRUE)
+
+
+
+```
+
+# Questions
+
+### How helpful is the home field advantage for underdogs?
+
+For those who don’t know what a home field advantage is, Wikipedia describes the phenomenon as, [quote]. This can be seen in a number of ways, through the visiting team acclimating to a different climate or the home team gaining more support from increased numbers of fans.
+
+```{r}
+
+# Removing ties because there are a very low number of tied games
+no_ties <- uniq_games %>% 
+  filter(home_score - vis_score != 0) %>%
+  mutate(home_under = Vegas_Favorite != home_team) %>%
+  mutate(point_diff = home_score - vis_score) %>%
+  mutate(home_won = (point_diff > 0)) %>%
+  mutate(pos_diff = abs(point_diff)) %>%
+  mutate(under_won = ((home_under & home_won) | (!home_under & !home_won)))
+
+
+# Adding Labels for the Bar Graphs
+no_ties$home_under <- factor(no_ties$home_under, 
+                             levels = c(FALSE, TRUE),
+                             labels = c("Visiting", "At Home"))
+
+no_ties$under_won <- factor(no_ties$under_won, 
+                             levels = c(FALSE, TRUE),
+                             labels = c("Underdog Lost", "Underdog Won"))
+
+# Underdog Win/Lose Stacked Bar Graph over Home/Visiting
+ggplot(data = no_ties, mapping = aes(x = home_under, fill = under_won)) +
+  geom_bar(position = "fill") +
+  labs(title = "Does Home Field Advantage Help the Underdog?",
+       x = "Underdog Location",
+       y = "Proportion",
+       fill = "Game Outcome")
+```
+
+
+
+```{r}
+# Underdog Win/Lose Side-by-side Bar Graph over Home/Visiting
+ggplot(data = no_ties, mapping = aes(x = home_under, fill = under_won)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Does Home Field Advantage Help the Underdog?",
+       x = "Underdog Location",
+       y = "Number of Games",
+       fill = "Game Outcome")
+
+# Factorizing the difference in points to relevant values
+no_ties$pos_diff <- cut(as.numeric(no_ties$pos_diff),
+                             breaks = c(0, 7, 14, 21, 100),
+                             labels = c("1-7 point difference", 
+                                        "8-14 point difference", 
+                                        "15-21 point difference", 
+                                        "22+ point difference"))
+
+# Adding Labels for 
+no_ties$home_under <- factor(no_ties$home_under, 
+                             levels = c("Visiting", "At Home"),
+                             labels = c("Underdog Visiting", "Underdog at Home"))
+
+# Point Difference Graph in Counts
+ggplot(data = no_ties, mapping = aes(x = under_won, fill = as.factor(pos_diff))) +
+  geom_bar() +                     # Unsure about adding a position 
+  facet_wrap(home_under ~ .) +
+  labs(title = "Does Home Field Advantage Help the Underdog?",
+       fill = "Point Difference",
+       y = "Number of Games",
+       x = "Underdog Outcome")
+
+# Point Difference Graph in Proportions
+ggplot(data = no_ties, mapping = aes(x = under_won, fill = as.factor(pos_diff))) +
+  geom_bar(position = "fill") +
+  facet_wrap(home_under ~ .) +
+  labs(title = "Does Home Field Advantage Help the Underdog?",
+       fill = "Point Difference",
+       y = "Proportion of Games",
+       x = "Underdog Won")
+
+
+```

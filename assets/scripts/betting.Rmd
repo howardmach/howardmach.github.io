@@ -1,0 +1,206 @@
+---
+title: "team_predict"
+author: "Anthony Nguyen"
+date: "2022-11-08"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Converts the individual game data into team game data
+
+```{r}
+library(ggplot2)
+library(dplyr)
+nfl <- read.csv("nfl_pass_rush_receive_raw_data.csv")
+
+#Subset data for team performances
+games <- unique(nfl$game_id)
+
+ovr_team_performance = subset(nfl, FALSE, select = c(5:13, 14, 15:29, 30:37, 44:53, 56:59, 60:69))
+colnames(ovr_team_performance) <- c(names(nfl[,c(5:13, 14, 15:29, 30:37, 44:53, 56:59, 60:69)]))
+ind_team_performance = c()
+
+for(game in games){
+  players <- which(nfl$game_id == game)
+
+  teams <- unique(c(nfl$team[players], nfl$Opponent_abbrev[players]))
+  
+  for(team in teams) {
+    ind_team_performance = c()
+    team_players <- players[which(nfl$team[players] == team)]
+    
+    ind_team_performance <- c(ind_team_performance, team)
+    
+    for (i in 6:13) {
+      ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, i]))
+    }
+    
+    ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, 14]))
+    
+    for (i in 15:29) {
+      ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, i]))
+    }
+    
+    for (i in 30:31) {
+      ind_team_performance <- c(ind_team_performance, (nfl[team_players[1], i]))
+    }
+    
+    for (i in 32:37) {
+      ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, i]))
+    }
+    
+    for (i in 44:53) {
+      ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, i]))
+    }
+    
+    for (i in 56:69) {
+      ind_team_performance <- c(ind_team_performance, (nfl[team_players[1], i]))
+    }
+    
+    ovr_team_performance <- rbind(ovr_team_performance, ind_team_performance)
+  }
+  
+}
+
+#Marks which columns are integers or characters
+
+int_col <- c(2:25, 28:43, 51:54, 56)
+char_col <- c(26:27, 44:50, 55)
+
+for (i in int_col) {
+  ovr_team_performance[, i] <-as.integer(ovr_team_performance[, i])
+}
+
+colnames(ovr_team_performance) <- c(names(nfl[,c(5:13, 14, 15:29, 30:37, 44:53, 56:59, 60:69)]))
+
+ovr_team_performance$home_score <- as.integer(ovr_team_performance$home_score)
+ovr_team_performance$vis_score <- as.integer(ovr_team_performance$vis_score)
+
+#Makes another column with the games score difference (with a loss bearing a negative difference)
+ovr_team_performance$new <- c(ovr_team_performance$home_score - ovr_team_performance$vis_score)
+names(ovr_team_performance) <- c(names(ovr_team_performance)[1:length(ovr_team_performance) - 1], "score_diff")
+
+away_teams <- which(ovr_team_performance$vis_team == ovr_team_performance$team)
+for (i in away_teams) {
+  ovr_team_performance$score_diff[i] <- (-ovr_team_performance$score_diff[i])
+}
+```
+
+```{r}
+#creates new column for if the team covered the spread
+ovr_team_performance$new <- c(FALSE)
+names(ovr_team_performance) <- c(names(ovr_team_performance)[1:length(ovr_team_performance) - 1], "cov_sprd")
+
+#creates new column for if the team is favored to win
+ovr_team_performance$new <- c(FALSE)
+names(ovr_team_performance) <- c(names(ovr_team_performance)[1:length(ovr_team_performance) - 1], "is_fav")
+
+for (i in 1:length(ovr_team_performance$is_fav)) {
+  
+  #True if team is favored to win
+  if(ovr_team_performance$team[i] == ovr_team_performance$Vegas_Favorite[i]) {
+    ovr_team_performance$is_fav[i] = TRUE
+  }
+  
+}
+
+for (i in 1:length(ovr_team_performance$cov_sprd)) {
+  
+  #Covered spread if team is favorite and their score minus the other team's is higher than the Vegas Line when negative
+  if(ovr_team_performance$team[i] == ovr_team_performance$Vegas_Favorite[i]) {
+    if(ovr_team_performance$score_diff[i] >= (ovr_team_performance$Vegas_Line[i]) * -1) {
+      ovr_team_performance$cov_sprd[i] = TRUE
+    }
+  }  
+  #Covered spread if team is underdog and their score minus the other team's is higher than the Vegas Line
+  else {
+    if(ovr_team_performance$score_diff[i] >= (ovr_team_performance$Vegas_Line[i])) {
+      ovr_team_performance$cov_sprd[i] = TRUE
+    }
+  }
+  
+}
+
+#creates new column for if the game covered the over/under
+ovr_team_performance$new <- c(FALSE) #Default value -> covered the under
+names(ovr_team_performance) <- c(names(ovr_team_performance)[1:length(ovr_team_performance) - 1], "cov_over")
+
+for (i in 1:length(ovr_team_performance$cov_over)) {
+  
+  #Covered the over if the combined score is greater or equal to the over/under number
+  if((ovr_team_performance$vis_score[i] + ovr_team_performance$vis_score[i]) >= ovr_team_performance$Over_Under[i]) {
+    ovr_team_performance$cov_over[i] = TRUE
+  }
+  
+}
+
+#Creates a database for the teams and how many games they covered the spread or the over/under
+teams <- unique(ovr_team_performance$team)
+team_spread <- c() #Amount of games the team covers the spread
+games_hit_over <- c() #Amount of games where the combined score is more than expected
+games_played <- c() #Amount of games played, for normalization
+
+for(team in teams) {
+  team_spread <- c(team_spread, length(which(ovr_team_performance$cov_sprd[which(ovr_team_performance$team == team)])))
+  
+  games_played <- c(games_played, length(which(ovr_team_performance$team == team)))
+  
+  games_hit_over <- c(games_hit_over, length(which(ovr_team_performance$cov_over[which(ovr_team_performance$team == team)])))
+}
+
+team_bets <- data.frame(teams = teams, cov_spread = team_spread, games_played = games_played, games_hit_over = games_hit_over)
+
+#Creates a normalized variable for the pct. of times a team covers the spread
+team_bets <- mutate(team_bets, cov_spread/games_played)
+names(team_bets) <- c(names(team_bets)[1:length(team_bets) - 1], "norm_spread")
+
+#Creates a normalized variable for the pct. of times a game hits the over
+team_bets <- mutate(team_bets, games_hit_over/games_played)
+names(team_bets) <- c(names(team_bets)[1:length(team_bets) - 1], "norm_over")
+
+#Sorts the database by the pct. of times the team covers the spread
+
+team_bets <- arrange(team_bets, norm_spread)
+
+#Graphs the top and bottom 5 teams by the sorted value
+
+ggplot(data = rbind(team_bets[1:5,], team_bets[28:32,])) +
+  geom_col(mapping = aes(x = teams, y = norm_spread, fill = norm_spread), position = "dodge") +
+  labs(x = "Teams", y = "% of games the team covers spread") +
+  scale_fill_gradient2(low = "red", high = "blue") +
+  guides(fill = "none")
+
+pre_teams <- team_bets$teams[1:5]
+pre_teams <- c(pre_teams, team_bets$teams[28:32])
+
+#Sorts the database by the pct. of times the team covers the over
+
+team_bets <- arrange(team_bets, norm_over)
+
+#Graphs the top and bottom 5 teams by the sorted value
+
+ggplot(data = rbind(team_bets[1:5,], team_bets[28:32,])) +
+  geom_col(mapping = aes(x = teams, y = norm_over, fill = norm_over), position = "dodge") +
+  labs(x = "Teams", y = "% of games that score more than expected") +
+  scale_fill_gradient2(low = "red", high = "blue") +
+  guides(fill = "none")
+
+pre_teams <- c(pre_teams, team_bets$teams[1:5])
+pre_teams <- c(pre_teams, team_bets$teams[28:32])
+
+#Adds both normalized variables' distances from 50%
+team_bets <- mutate(team_bets, abs(norm_spread - 0.5) + abs(norm_over - 0.5))
+names(team_bets) <- c(names(team_bets)[1:length(team_bets) - 1], "comb_pcts")
+
+#Sorts the database by the above and graphs the top and bottom 5
+
+team_bets <- arrange(team_bets, comb_pcts)
+ggplot(data = rbind(team_bets[1:5,], team_bets[28:32,])) +
+  geom_col(mapping = aes(x = teams, y = comb_pcts, fill = comb_pcts), position = "dodge") +
+  labs(x = "Teams", y = "Predictibility") +
+  scale_fill_gradient2(low = "red", high = "blue") +
+  guides(fill = "none")
+```

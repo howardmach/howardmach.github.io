@@ -1,0 +1,227 @@
+---
+title: "team_subset"
+author: "Anthony Nguyen"
+date: "2022-11-08"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Converts the individual game data into team game data
+
+```{r}
+nfl <- read.csv("nfl_pass_rush_receive_raw_data.csv")
+
+#Subset data for team performances
+games <- unique(nfl$game_id)
+
+ovr_team_performance = subset(nfl, FALSE, select = c(5:13, 14, 15:29, 30:37, 44:53, 56:59, 60:69))
+colnames(ovr_team_performance) <- c(names(nfl[,c(5:13, 14, 15:29, 30:37, 44:53, 56:59, 60:69)]))
+ind_team_performance = c()
+
+for(game in games){
+  players <- which(nfl$game_id == game)
+
+  teams <- unique(c(nfl$team[players], nfl$Opponent_abbrev[players]))
+  
+  for(team in teams) {
+    ind_team_performance = c()
+    team_players <- players[which(nfl$team[players] == team)]
+    
+    ind_team_performance <- c(ind_team_performance, team)
+    
+    for (i in 6:13) {
+      ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, i]))
+    }
+    
+    ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, 14]))
+    
+    for (i in 15:29) {
+      ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, i]))
+    }
+    
+    for (i in 30:31) {
+      ind_team_performance <- c(ind_team_performance, (nfl[team_players[1], i]))
+    }
+    
+    for (i in 32:37) {
+      ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, i]))
+    }
+    
+    for (i in 44:53) {
+      ind_team_performance <- c(ind_team_performance, sum(nfl[team_players, i]))
+    }
+    
+    for (i in 56:69) {
+      ind_team_performance <- c(ind_team_performance, (nfl[team_players[1], i]))
+    }
+    
+    ovr_team_performance <- rbind(ovr_team_performance, ind_team_performance)
+  }
+  
+  #Marks which columns are integers or characters
+
+  int_col <- c(2:25, 28:43, 51:54, 56)
+  char_col <- c(26:27, 44:50, 55)
+
+  for (i in int_col) {
+    ovr_team_performance[, i] <-as.integer(ovr_team_performance[, i])
+  }
+
+
+  colnames(ovr_team_performance) <- c(names(nfl[,c(5:13, 14, 15:29, 30:37, 44:53, 56:59, 60:69)]))
+  
+}
+```
+
+Finds and analyzes all the blowout games from 2019-2022
+
+```{r}
+#Data cleaning
+
+ovr_team_performance$home_score <- as.integer(ovr_team_performance$home_score)
+ovr_team_performance$vis_score <- as.integer(ovr_team_performance$vis_score)
+
+#Makes another column marking if the game was blown out
+ovr_team_performance$new <- c(FALSE)
+names(ovr_team_performance) <- c(names(ovr_team_performance)[1:length(ovr_team_performance) - 1], "is_blownout")
+
+#Makes another column with the games score difference (with a loss bearing a negative difference)
+ovr_team_performance$new <- c(ovr_team_performance$home_score - ovr_team_performance$vis_score)
+names(ovr_team_performance) <- c(names(ovr_team_performance)[1:length(ovr_team_performance) - 1], "score_diff")
+
+away_teams <- which(ovr_team_performance$vis_team == ovr_team_performance$team)
+for (i in away_teams) {
+  ovr_team_performance$score_diff[i] <- (-ovr_team_performance$score_diff[i])
+}
+
+#Marks the team performance as blownout if they lost by 10+ points
+for (i in 1:length(ovr_team_performance$score_diff)) {
+  if(ovr_team_performance$score_diff[i] <= -10) {
+    ovr_team_performance$is_blownout[i] <- TRUE
+  }
+}
+
+#Function to find the team's next game
+find_next = function(team, teams, indx) {
+  found = FALSE
+  while (found != TRUE && indx <= length(teams) ) {
+    if(teams[indx] == team ) {
+      found = TRUE
+    }
+    else {
+      indx <- indx + 1
+    }
+  }
+  if(found == TRUE) {
+    return (indx)
+  }
+  else {
+    return (-1)
+  }
+}
+
+library(ggplot2)
+
+#Creates new database for the change of games
+
+change_from_blowout <- ovr_team_performance[0, ]
+colnames(change_from_blowout) <- colnames(ovr_team_performance)
+
+#Adds each difference in blowout games and next games to the database
+
+for (i in which(ovr_team_performance$is_blownout == TRUE)) {
+  
+  ##Finds the next game
+  
+  next_game <- find_next(ovr_team_performance$team[i], ovr_team_performance$team, (i + 1))
+  if(next_game > 0) { #Adds to database if there is a game after the blowout game
+    change_from_blowout[length(change_from_blowout[, 1]) + 1, ] <- NA
+    
+    #Adds changes in performance to a new row in the database
+    
+    for(j in 1:length(ovr_team_performance)) {
+      if(is.integer(ovr_team_performance[i, j])) { #If element is integer, input the difference of elements to the row
+        change_from_blowout[length(change_from_blowout[, 1]), j] <- as.integer(ovr_team_performance[next_game, j] - ovr_team_performance[i, j])
+      }
+      else { #If not, just adds the element to the row
+        change_from_blowout[length(change_from_blowout[, 1]), j] <- ovr_team_performance[next_game, j]
+      }
+    }
+  }
+}
+
+#Creates table to graph the change in significant events
+
+sig_event <- data.frame(event_type = NA, change = NA)
+
+#Adds all the changes to the dataframe
+
+for(i in 1:length(change_from_blowout[,1])) {
+  sig_event[nrow(sig_event) + 1, 1] <- "Pass TD"
+  sig_event[nrow(sig_event), 2] <- change_from_blowout$pass_td[i]
+  
+  sig_event[nrow(sig_event) + 1, 1] <- "Rush TD"
+  sig_event[nrow(sig_event), 2] <- change_from_blowout$rush_td[i]
+  
+  sig_event[nrow(sig_event) + 1, 1] <- "Fumble"
+  sig_event[nrow(sig_event), 2] <- change_from_blowout$fumbles_lost[i]
+  
+  sig_event[nrow(sig_event) + 1, 1] <- "Interception"
+  sig_event[nrow(sig_event), 2] <- change_from_blowout$pass_int[i]
+}
+
+#Creates the graph for the change in type of touchdowns
+
+ggplot(data = subset(sig_event, event_type == "Pass TD" | event_type == "Rush TD")) + 
+  geom_bar(mapping = aes(x = change, fill = event_type), position = "dodge") + 
+  labs(title = "Change in Touchdowns", x = "Change in amount", y = "Number of Games", fill = "Type of event")
+
+#Creates the graph for the change in type of turnovers
+
+ggplot(data = subset(sig_event, event_type == "Fumble" | event_type == "Interception")) +
+  geom_bar(mapping = aes(x = change, fill = event_type), position = "dodge") + 
+  labs(title = "Change in Turnovers", x = "Change in amount", y = "Number of Games", fill = "Type of event")
+
+#Creates the graph for the change in type of plays
+
+ggplot(data = change_from_blowout) +
+  geom_density(mapping = aes(x = pass_att, color = "red")) +
+  geom_density(mapping = aes(x = rush_att, color = "blue")) + 
+  labs(title = "Change in Passing and Rushing", x = "Change in number of plays", y = "Density", color = "Type of play") + 
+  scale_color_discrete(labels = c("Pass Attempts", "Rush Attempts"))
+
+#Creates table to graph the change in significant events
+
+yds <- data.frame(play_type = NA, change = NA)
+
+#Adds all the changes to the dataframe
+
+for(i in 1:length(change_from_blowout[,1])) {
+  yds[nrow(yds) + 1, 1] <- "Pass Yds"
+  yds[nrow(yds), 2] <- change_from_blowout$pass_yds[i]
+  
+  yds[nrow(yds) + 1, 1] <- "Rush Yds"
+  yds[nrow(yds), 2] <- change_from_blowout$rush_yds[i]
+}
+
+#Creates the graph for the change in yards for certain plays
+
+ggplot(data = subset(yds, play_type == "Pass Yds")) +
+  geom_histogram(mapping = aes(x = change, fill = 1), binwidth = 20) +
+  labs(title = "Change in Pass Yards", x = "Change", y = "Number of Games") +
+  scale_fill_distiller(palette = "Reds") + 
+  theme(legend.position = "none") +
+  xlim(-250, 250)
+
+ggplot(data = subset(yds, play_type == "Rush Yds")) +
+  geom_histogram(mapping = aes(x = change, fill = 2), binwidth = 20) +
+  labs(title = "Change in Rush Yards", x = "Change", y = "Number of Games") + 
+  scale_fill_distiller(palette = "Blues") + 
+  theme(legend.position = "none") +
+  xlim(-250, 250)
+
+
+```
