@@ -25,5 +25,5 @@ Check out full project reports and presentations on my [Portfolio Website](https
 
 ### 🏈 NFL Offensive Performance & Betting Odds Analysis
 * **Tools:** R (`ggplot2`, `dplyr`), Exploratory Data Analysis, Data Wrangling
-* **Summary:** Analyzed **19,000+** player performances across **1,600+** NFL games to evaluate post-blowout adjustments, fantasy scoring distributions, home-field bias, and betting market predictability.
+* **Summary:** Analyzed $19,000+$ player performances across $1,600+$ NFL games to evaluate post-blowout adjustments, fantasy scoring distributions, home-field bias, and betting market predictability.
 * **Links:** [📄 View Project](./projects/nfl-performance-analysis)
