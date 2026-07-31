@@ -74,10 +74,6 @@ $$Y_{\text{flipper}} = 74.9158 - 2.8069(\Delta^{13}\text{C}) - 1.2943(\text{Culm
 
 <p align="center">
   <a href="../assets/pdfs/penguins_regression.pdf" target="_blank" style="padding: 10px 20px; background-color: #0366d6; color: white; border-radius: 6px; text-decoration: none; font-weight: bold;">
-    📥 Download Full Penguin Regression Report (PDF)
+    📥 Download Full PDF Report
   </a>
 </p>
-
----
-
-[🔗 View Analysis R Code & Repository](https://github.com/howardmach/YOUR_REPO_NAME)[cite: 3]
