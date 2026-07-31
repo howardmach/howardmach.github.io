@@ -1,0 +1,210 @@
+---
+title: "Penguins (Final)"
+author: "Howard Mach"
+date: "2023-12-13"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Change root.dir so that data files can be loaded in properly
+knitr::opts_knit$set(root.dir = '/users/howar/OneDrive/Documents')
+```
+
+# Data Cleaning
+
+```{r}
+# importing libraries
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(MASS) 
+library(reshape2) 
+library(car)
+```
+
+```{r}
+# loading and cleaning data
+basePenguin_lter <- read.csv("penguins_lter.csv")
+basePenguin_size <- read.csv("penguins_size.csv")
+PenguinDF <- cbind(basePenguin_lter, basePenguin_size)
+
+PenguinOmit <- na.omit(PenguinDF)
+PenguinOmit <- subset(PenguinOmit, select = -c(1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 17, 24))
+PenguinOmit <- dplyr::filter(PenguinOmit, Sex %in% c('MALE', 'FEMALE'))
+PenguinOmit$Date.Egg <- format(as.Date(PenguinOmit$Date.Egg, format="%m/%d/%Y"),"%Y")
+PenguinOmit$Date.Egg <- substring(PenguinOmit$Date.Egg, 3)
+```
+
+```{r}
+# characteristics of numeric data
+summary(PenguinOmit$culmen_length_mm)
+summary(PenguinOmit$culmen_depth_mm)
+summary(PenguinOmit$flipper_length_mm)
+summary(PenguinOmit$body_mass_g)
+```
+
+```{r}
+# more characteristics of numeric data
+var(PenguinOmit$culmen_length_mm)
+range(PenguinOmit$culmen_length_mm)
+
+var(PenguinOmit$flipper_length_mm)
+range(PenguinOmit$flipper_length_mm)
+
+var(PenguinOmit$culmen_depth_mm)
+range(PenguinOmit$culmen_depth_mm)
+
+var(PenguinOmit$body_mass_g)
+range(PenguinOmit$body_mass_g)
+```
+
+# Exploratory Analysis
+
+```{r}
+# distribution of response variable
+
+ggplot(PenguinOmit, aes(x = flipper_length_mm, fill = species)) + 
+  geom_histogram()+ 
+  ggtitle("Distribution of Penguin Flipper Length") +
+  theme(text = element_text(size = 14)) +
+  labs(x = "Flipper Length (mm)", y = "Count")
+
+range_adelie <- range(PenguinOmit$flipper_length_mm[PenguinOmit$species == "Adelie"])
+print(range_adelie)
+range_chinstrap <- range(PenguinOmit$flipper_length_mm[PenguinOmit$species == "Chinstrap"])
+print(range_chinstrap)
+range_gentoo <- range(PenguinOmit$flipper_length_mm[PenguinOmit$species == "Gentoo"])
+print(range_gentoo)
+
+PenguinOmit %>%
+  group_by(species) %>%
+  summarise(flipper_length_mm = paste(min(flipper_length_mm), "-", max(flipper_length_mm)))
+```
+
+```{r}
+# formatting egg data
+melt <- dplyr::select(PenguinOmit, -Clutch.Completion)
+
+meltcont <- dplyr::select(melt, -island, -Sex, -Date.Egg)
+melt$species <- as.factor(melt$species)
+melt$Sex <- as.factor(melt$Sex)
+
+# flipper length
+flipper_lengthdfl <- melt(data = meltcont, id = c("species", "flipper_length_mm"))
+```
+
+# Variable Selection
+
+```{r}
+# choosing good response variable
+ggplot(data = flipper_lengthdfl, aes(x = value, y = flipper_length_mm)) +
+  geom_point(aes(color = variable)) + facet_wrap(~variable, scales = "free") +
+  geom_smooth(method = "lm", se = FALSE)
+
+ggplot(data = flipper_lengthdfl, aes(x = value, y = flipper_length_mm)) +
+  geom_point(aes(color = species)) + facet_wrap(~variable, scales = "free") +
+  geom_smooth(method = "lm", se = FALSE)
+
+# making boxplot of flipper length v. discrete variables
+meltdisc <- dplyr::select(melt, species, Date.Egg, Sex, flipper_length_mm)
+
+flipper_lengthdfl2 <- melt(data = meltdisc, id = c("species", "flipper_length_mm"))
+ggplot(flipper_lengthdfl2, aes(x = value, y = flipper_length_mm)) +
+  geom_boxplot(aes(color = variable)) + 
+  facet_wrap(~variable, scales = "free")
+
+ggplot(flipper_lengthdfl2, aes(x = value, y = flipper_length_mm)) +
+  geom_boxplot(aes(color = species)) + 
+  facet_wrap(~variable, scales = "free")
+```
+
+# Model Construction
+
+```{r}
+PenguinOmit_reduced <- PenguinOmit[-c(157),]
+
+# constructing full linear model
+fullModel <- lm(data = PenguinOmit_reduced, flipper_length_mm ~ Delta.15.N..o.oo. + Delta.13.C..o.oo. + culmen_depth_mm + culmen_length_mm + body_mass_g)
+
+summary(fullModel)
+# Remove variables with p-value > 0.05
+fullModel <- lm(data = PenguinOmit_reduced, flipper_length_mm ~ Delta.13.C..o.oo. + culmen_depth_mm + culmen_length_mm + body_mass_g)
+```
+
+# Variable Inflation Factors
+
+```{r}
+# variance inflation factors of model
+vif(fullModel)
+```
+
+# ANOVA
+
+```{r}
+# constructing reduced model (removing variables with p-value > 0.05)
+reducedModel <- lm(data = PenguinOmit_reduced, flipper_length_mm ~ Delta.13.C..o.oo. + culmen_depth_mm + culmen_length_mm + body_mass_g)
+
+vif(reducedModel)
+
+summary(reducedModel)
+
+anova(reducedModel, fullModel)
+```
+
+# Residual Analysis
+
+```{r}
+stdres(reducedModel)
+studres(reducedModel)
+rstudent(reducedModel)
+
+range(stdres(reducedModel))
+
+barplot(height = stdres(reducedModel), main = "Standardized Residuals", xlab = "Index", ylab = "Standardized Resid", ylim=c(-6,6), cex.names = 0.8)
+abline(h=3, col = "Red", lwd=2)
+abline(h=-3, col = "Red", lwd=2)
+
+range(studres(reducedModel))
+
+barplot(height = studres(reducedModel), main = "Studentized Residuals", xlab = "Index", ylab = "Studentized Resid", ylim=c(-6,6), cex.names = 0.8)
+abline(h=3, col = "Red", lwd=2)
+abline(h=-3, col = "Red", lwd=2)
+
+range(rstudent(reducedModel))
+
+barplot(height = rstudent(reducedModel),, main = "R Student Residuals", xlab = "Index", ylab = "R Student Resid", ylim=c(-6,6), cex.names = 0.8)
+abline(h=3, col = "Red", lwd=2)
+abline(h=-3, col = "Red", lwd=2)
+```
+
+# Influential Points Analysis
+
+```{r}
+dfbetasPlots(reducedModel, intercept = TRUE)
+influenceIndexPlot(reducedModel)
+length(summary(influence.measures(reducedModel)))
+```
+
+# QQ Plot and Histogram
+
+```{r}
+par(mfrow=c(1,2))
+hist(studres(reducedModel), breaks=10, freq=F, col="cornflowerblue",
+     cex.axis=1.5, cex.lab=1.5, cex.main=2)
+qqPlot(reducedModel)
+```
+
+# Residuals v. Fitted Values
+
+```{r}
+# residuals v. fitted values
+residualPlot(reducedModel, type="rstudent", fitted = F, quadratic = F, col = 6, pch=16, cex=1.5, cex.axis=1.5, cex.lab=1.5)
+```
+
+# Box-Cox Transformation
+
+```{r}
+bc <- boxcox(reducedModel, plotit = TRUE)
+(bc.power <- bc$x[which.max(bc$y)])
+```
