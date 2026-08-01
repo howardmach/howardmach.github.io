@@ -13,7 +13,7 @@ title: Penguin Regression Analysis
 
 ## 📌 Executive Summary
 
-This study constructs a predictive model to estimate penguin flipper length ($\text{mm}$) based on morphological features and stable isotope signatures ($^{13}\text{C}$ and $^{15}\text{N}$) collected at Palmer Station, Antarctica[cite: 3]. Through backward selection, residual diagnostics, and Box-Cox transformation testing, a reduced 4-predictor multiple linear regression model was built, achieving an **adjusted $R^2$ of 0.8527**.
+This study constructs a predictive model to estimate penguin flipper length ($\text{mm}$) based on morphological features and stable isotope signatures ($^{13}\text{C}$ and $^{15}\text{N}$) collected at Palmer Station, Antarctica. Through backward selection, residual diagnostics, and Box-Cox transformation testing, a reduced 4-predictor multiple linear regression model was built, achieving an **adjusted $R^2$ of 0.8527**.
 
 ---
 
