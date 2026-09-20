@@ -6,7 +6,9 @@ title: NFL Performance Analysis
 # 🏈 NFL Offensive Performance & Betting Odds Analysis
 
 **Authors:** Howard Mach, Anthony Nguyen, Hayden Rogers
+
 **Tools & Technologies:** R (`ggplot2`, `dplyr`)
+
 **Data Source:** NFL raw data from [Advanced Sports Analytics](https://substack.com/@advancedsportsanalytics)
 
 ---
